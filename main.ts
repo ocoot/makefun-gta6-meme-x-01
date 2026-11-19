@@ -9,6 +9,8 @@
 // Where things live comes from the grader's environment:
 //   MAKEFUN_BOT_DIR    the repository's directory (fallback: this file's folder)
 //   MAKEFUN_OUTPUT_DIR where POST.json must land (fallback: /output)
+// An empty value counts as unset: a harness that exports the variable with
+// nothing in it must not send the program looking for a relative path.
 //
 // The copy is done by reading the bytes and writing them back out — no copy
 // helpers, nothing deleted — so the program runs cleanly twice in a row over the
@@ -18,8 +20,13 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoDir = process.env.MAKEFUN_BOT_DIR ?? dirname(fileURLToPath(import.meta.url));
-const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+function envDir(name: string, fallback: string): string {
+  const value = process.env[name];
+  return value !== undefined && value.trim() !== '' ? value : fallback;
+}
+
+const repoDir = envDir('MAKEFUN_BOT_DIR', dirname(fileURLToPath(import.meta.url)));
+const outputDir = envDir('MAKEFUN_OUTPUT_DIR', '/output');
 
 const postJson = readFileSync(join(repoDir, 'POST.json'));
 mkdirSync(outputDir, { recursive: true });
